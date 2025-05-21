@@ -7,22 +7,30 @@ namespace Kursovaya
     public partial class Kabin1 : Form
     {
         // Конфигурационные константы
-        private const int INSTRUMENT_COUNT = 5;
-        private const int INSTRUMENT_SIZE = 100;
+        private const int INSTRUMENT_COUNT = 4;
+        private const int INSTRUMENT_SIZE = 150;
         private const int TOP_MARGIN = 10;
         private const int MIN_SPACING = 10;
         private const int SPACING_MULTIPLIER = 4;
         private readonly Color HOVER_COLOR = Color.FromArgb(60, 187, 89);
         private readonly Color DEFAULT_BUTTON_COLOR = Color.Transparent;
 
+        // Настройки описания инструментов
+        private static readonly Color DESCRIPTION_BACK_COLOR = Color.FromArgb(200, 0, 0, 0);
+        private static readonly Color DESCRIPTION_FORE_COLOR = Color.White;
+        private static readonly Font DESCRIPTION_FONT = new Font("Arial", 20, FontStyle.Regular);
+        private static readonly Padding DESCRIPTION_PADDING = new Padding(5);
+        private const int DESCRIPTION_VERTICAL_OFFSET = 5;
+        private const int DESCRIPTION_MAX_WIDTH = 150;
+
         // Пути к изображениям
-        private readonly string BACKGROUND_IMAGE_1 = "C:/Users/nosky/Desktop/CrissKursach/hirurgi-na-pacienta-obsuzdaut-rentgena-v-komnate-operacii.jpg";
-        private readonly string BACKGROUND_IMAGE_2 = "C:/Users/nosky/Desktop/CrissKursach/vnutrennii-vid-operacionnoi1.jpg";
+        private readonly string BACKGROUND_IMAGE_1 = "C:\\Users\\nosky\\source\\repos\\Krit88888\\Kursovaya\\Photos\\hirurgi-na-pacienta-obsuzdaut-rentgena-v-komnate-operacii.jpg";
+        private readonly string BACKGROUND_IMAGE_2 = "C:\\Users\\nosky\\source\\repos\\Krit88888\\Kursovaya\\Photos\\vnutrennii-vid-operacionnoi1.jpg";
         private readonly string[] TOOL_PATHS =
         {
-            "C:/Users/nosky/Desktop/CrissKursach/pincet.png",
-            "C:/Users/nosky/Desktop/CrissKursach/pngwing.com.png",
-            "C:/Users/nosky/Desktop/CrissKursach/skalpel.png"
+            "C:\\Users\\nosky\\source\\repos\\Krit88888\\Kursovaya\\Photos\\pincet.png",
+            "C:\\Users\\nosky\\source\\repos\\Krit88888\\Kursovaya\\Photos\\pngwing.com.png",
+            "C:\\Users\\nosky\\source\\repos\\Krit88888\\Kursovaya\\Photos\\skalpel.png"
         };
 
         private readonly string[] TOOL_DESCRIPTIONS =
@@ -39,7 +47,6 @@ namespace Kursovaya
             InitializeComponent();
             this.StartPosition = FormStartPosition.CenterScreen;
 
-            // Инициализация инструментов
             instruments = new Instrument[INSTRUMENT_COUNT];
             UpdateInstrumentPositions();
 
@@ -56,28 +63,19 @@ namespace Kursovaya
             };
         }
 
-        // ...
-
         private void UpdateInstrumentPositions()
         {
             int supInsWidth = SupIns.ClientSize.Width;
             int spacing = Math.Max(MIN_SPACING, (supInsWidth - INSTRUMENT_COUNT * INSTRUMENT_SIZE) / (INSTRUMENT_COUNT + 1));
 
-            // Ensure instruments array matches INSTRUMENT_COUNT
             if (instruments == null || instruments.Length != INSTRUMENT_COUNT)
             {
-                // Remove old controls if reducing count
                 if (instruments != null)
                 {
-                    for (int i = 0; i < instruments.Length; i++)
+                    foreach (var instrument in instruments)
                     {
-                        if (instruments[i] != null)
-                        {
-                            if (instruments[i].PictureBox.Parent != null)
-                                instruments[i].PictureBox.Parent.Controls.Remove(instruments[i].PictureBox);
-                            if (instruments[i].Description.Parent != null)
-                                instruments[i].Description.Parent.Controls.Remove(instruments[i].Description);
-                        }
+                        instrument?.PictureBox.Dispose();
+                        instrument?.Description.Dispose();
                     }
                 }
                 instruments = new Instrument[INSTRUMENT_COUNT];
@@ -86,8 +84,6 @@ namespace Kursovaya
             for (int i = 0; i < INSTRUMENT_COUNT; i++)
             {
                 int x = spacing + i * (INSTRUMENT_SIZE + spacing);
-
-                // Use safe access for TOOL_PATHS and TOOL_DESCRIPTIONS
                 string toolPath = i < TOOL_PATHS.Length ? TOOL_PATHS[i] : "";
                 string toolDesc = i < TOOL_DESCRIPTIONS.Length ? TOOL_DESCRIPTIONS[i] : "";
 
@@ -98,7 +94,13 @@ namespace Kursovaya
                         toolDesc,
                         x,
                         TOP_MARGIN,
-                        INSTRUMENT_SIZE
+                        INSTRUMENT_SIZE,
+                        DESCRIPTION_BACK_COLOR,
+                        DESCRIPTION_FORE_COLOR,
+                        DESCRIPTION_FONT,
+                        DESCRIPTION_PADDING,
+                        DESCRIPTION_VERTICAL_OFFSET,
+                        DESCRIPTION_MAX_WIDTH
                     );
 
                     instruments[i].AddToContainer(SupIns, this);
