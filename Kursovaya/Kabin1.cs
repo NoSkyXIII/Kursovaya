@@ -6,8 +6,33 @@ namespace Kursovaya
 {
     public partial class Kabin1 : Form
     {
+        // Конфигурационные константы
+        private const int INSTRUMENT_COUNT = 5;
+        private const int INSTRUMENT_SIZE = 100;
+        private const int TOP_MARGIN = 10;
+        private const int MIN_SPACING = 10;
+        private const int SPACING_MULTIPLIER = 4;
+        private readonly Color HOVER_COLOR = Color.FromArgb(60, 187, 89);
+        private readonly Color DEFAULT_BUTTON_COLOR = Color.Transparent;
+
+        // Пути к изображениям
+        private readonly string BACKGROUND_IMAGE_1 = "C:/Users/nosky/Desktop/CrissKursach/hirurgi-na-pacienta-obsuzdaut-rentgena-v-komnate-operacii.jpg";
+        private readonly string BACKGROUND_IMAGE_2 = "C:/Users/nosky/Desktop/CrissKursach/vnutrennii-vid-operacionnoi1.jpg";
+        private readonly string[] TOOL_PATHS =
+        {
+            "C:/Users/nosky/Desktop/CrissKursach/pincet.png",
+            "C:/Users/nosky/Desktop/CrissKursach/pngwing.com.png",
+            "C:/Users/nosky/Desktop/CrissKursach/skalpel.png"
+        };
+
+        private readonly string[] TOOL_DESCRIPTIONS =
+        {
+            "Пинцет: Для захвата и удержания тканей или мелких объектов",
+            "Зажим: Для временного пережатия сосудов или тканей",
+            "Скальпель: Для точных разрезов тканей"
+        };
+
         private Instrument[] instruments;
-        private int instrumentCount = 3; // Количество инструментов
 
         public Kabin1()
         {
@@ -15,76 +40,107 @@ namespace Kursovaya
             this.StartPosition = FormStartPosition.CenterScreen;
 
             // Инициализация инструментов
-            instruments = new Instrument[instrumentCount];
+            instruments = new Instrument[INSTRUMENT_COUNT];
             UpdateInstrumentPositions();
 
-            // Обеспечиваем видимость left1 при старте
             left1.Visible = true;
             right1.Visible = false;
 
-            // Обновление позиций при изменении размера формы или SupIns
             SupIns.SizeChanged += (s, e) => UpdateInstrumentPositions();
             this.SizeChanged += (s, e) => UpdateInstrumentPositions();
             this.Load += (s, e) =>
             {
-                Kabinet1.SendToBack(); // Фон на задний план
-                left1.BringToFront(); // Кнопки поверх всех объектов
+                Kabinet1.SendToBack();
+                left1.BringToFront();
                 right1.BringToFront();
             };
         }
 
+        // ...
+
         private void UpdateInstrumentPositions()
         {
             int supInsWidth = SupIns.ClientSize.Width;
-            int instrumentSize = 100;
-            int spacing = Math.Max(10, (supInsWidth - 3 * instrumentSize) / 4); // Равномерное распределение
+            int spacing = Math.Max(MIN_SPACING, (supInsWidth - INSTRUMENT_COUNT * INSTRUMENT_SIZE) / (INSTRUMENT_COUNT + 1));
 
-            // Данные инструментов
-            (string path, string description)[] toolData = new[]
+            // Ensure instruments array matches INSTRUMENT_COUNT
+            if (instruments == null || instruments.Length != INSTRUMENT_COUNT)
             {
-                ("C:/Users/nosky/Desktop/CrissKursach/pincet.png", "Пинцет: Для захвата и удержания тканей или мелких объектов"),
-                ("C:/Users/nosky/Desktop/CrissKursach/pngwing.com.png", "Зажим: Для временного пережатия сосудов или тканей"),
-                ("C:/Users/nosky/Desktop/CrissKursach/skalpel.png", "Скальпель: Для точных разрезов тканей")
-            };
+                // Remove old controls if reducing count
+                if (instruments != null)
+                {
+                    for (int i = 0; i < instruments.Length; i++)
+                    {
+                        if (instruments[i] != null)
+                        {
+                            if (instruments[i].PictureBox.Parent != null)
+                                instruments[i].PictureBox.Parent.Controls.Remove(instruments[i].PictureBox);
+                            if (instruments[i].Description.Parent != null)
+                                instruments[i].Description.Parent.Controls.Remove(instruments[i].Description);
+                        }
+                    }
+                }
+                instruments = new Instrument[INSTRUMENT_COUNT];
+            }
 
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < INSTRUMENT_COUNT; i++)
             {
-                int x = spacing + i * (instrumentSize + spacing);
+                int x = spacing + i * (INSTRUMENT_SIZE + spacing);
+
+                // Use safe access for TOOL_PATHS and TOOL_DESCRIPTIONS
+                string toolPath = i < TOOL_PATHS.Length ? TOOL_PATHS[i] : "";
+                string toolDesc = i < TOOL_DESCRIPTIONS.Length ? TOOL_DESCRIPTIONS[i] : "";
+
                 if (instruments[i] == null)
                 {
-                    instruments[i] = new Instrument(toolData[i].path, toolData[i].description, x, 10, instrumentSize);
-                    instruments[i].AddToContainer(SupIns, this); // Передаем форму для Description
-                    instruments[i].SetupEvents(i,
-                        index => // Click
-                        {
-                            instruments[index].IsFixed = !instruments[index].IsFixed;
-                            instruments[index].Description.Visible = instruments[index].IsFixed;
-                            instruments[index].Description.BringToFront(); // Текст поверх всех объектов
-                            left1.BringToFront(); // Кнопки остаются кликабельными
-                            right1.BringToFront();
-                        },
-                        index => // MouseHover
-                        {
-                            instruments[index].Description.Visible = true;
-                            instruments[index].UpdateDescriptionPosition(SupIns.Location); // Обновляем позицию
-                            instruments[index].Description.BringToFront(); // Текст поверх всех объектов
-                            left1.BringToFront(); // Кнопки остаются кликабельными
-                            right1.BringToFront();
-                        },
-                        index => // MouseLeave
-                        {
-                            if (!instruments[index].IsFixed)
-                            {
-                                instruments[index].Description.Visible = false;
-                            }
-                        });
-                    instruments[i].UpdateDescriptionPosition(SupIns.Location); // Устанавливаем начальную позицию
+                    instruments[i] = new Instrument(
+                        toolPath,
+                        toolDesc,
+                        x,
+                        TOP_MARGIN,
+                        INSTRUMENT_SIZE
+                    );
+
+                    instruments[i].AddToContainer(SupIns, this);
+                    instruments[i].SetupEvents(
+                        i,
+                        index => HandleInstrumentClick(index),
+                        index => HandleInstrumentHover(index),
+                        index => HandleInstrumentLeave(index)
+                    );
+                    instruments[i].UpdateDescriptionPosition(SupIns.Location);
                 }
                 else
                 {
-                    instruments[i].PictureBox.Location = new Point(x, 10);
-                    instruments[i].UpdateDescriptionPosition(SupIns.Location); // Обновляем позицию с учетом SupIns
+                    instruments[i].PictureBox.Location = new Point(x, TOP_MARGIN);
+                    instruments[i].UpdateDescriptionPosition(SupIns.Location);
                 }
+            }
+        }
+
+        private void HandleInstrumentClick(int index)
+        {
+            instruments[index].IsFixed = !instruments[index].IsFixed;
+            instruments[index].Description.Visible = instruments[index].IsFixed;
+            instruments[index].Description.BringToFront();
+            left1.BringToFront();
+            right1.BringToFront();
+        }
+
+        private void HandleInstrumentHover(int index)
+        {
+            instruments[index].Description.Visible = true;
+            instruments[index].UpdateDescriptionPosition(SupIns.Location);
+            instruments[index].Description.BringToFront();
+            left1.BringToFront();
+            right1.BringToFront();
+        }
+
+        private void HandleInstrumentLeave(int index)
+        {
+            if (!instruments[index].IsFixed)
+            {
+                instruments[index].Description.Visible = false;
             }
         }
 
@@ -92,17 +148,17 @@ namespace Kursovaya
         {
             try
             {
-                Kabinet1.Image = Image.FromFile("C:/Users/nosky/Desktop/CrissKursach/hirurgi-na-pacienta-obsuzdaut-rentgena-v-komnate-operacii.jpg");
+                Kabinet1.Image = Image.FromFile(BACKGROUND_IMAGE_1);
                 SupIns.Visible = true;
                 right1.Visible = true;
                 left1.Visible = false;
-                UpdateInstrumentPositions(); // Обновление позиций при показе SupIns
-                Kabinet1.SendToBack(); // Фон на задний план
-                right1.BringToFront(); // Кнопка поверх всех объектов
+                UpdateInstrumentPositions();
+                Kabinet1.SendToBack();
+                right1.BringToFront();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка загрузки изображения: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ShowErrorDialog($"Ошибка загрузки изображения: {ex.Message}");
             }
         }
 
@@ -110,13 +166,12 @@ namespace Kursovaya
         {
             try
             {
-                Kabinet1.Image = Image.FromFile("C:/Users/nosky/Desktop/CrissKursach/vnutrennii-vid-operacionnoi1.jpg");
+                Kabinet1.Image = Image.FromFile(BACKGROUND_IMAGE_2);
                 right1.Visible = false;
                 left1.Visible = true;
                 SupIns.Visible = false;
 
-                // Скрытие всех описаний и сброс закрепленных состояний
-                for (int i = 0; i < 3; i++)
+                for (int i = 0; i < INSTRUMENT_COUNT; i++)
                 {
                     if (instruments[i] != null)
                     {
@@ -124,33 +179,34 @@ namespace Kursovaya
                         instruments[i].IsFixed = false;
                     }
                 }
-                Kabinet1.SendToBack(); // Фон на задний план
-                left1.BringToFront(); // Кнопка поверх всех объектов
+                Kabinet1.SendToBack();
+                left1.BringToFront();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка загрузки изображения: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ShowErrorDialog($"Ошибка загрузки изображения: {ex.Message}");
             }
         }
 
-        private void right1_MouseHover(object sender, EventArgs e)
+        private void ShowErrorDialog(string message)
         {
-            right1.BackColor = Color.FromArgb(60, 187, 89); // Светлее при наведении
+            MessageBox.Show(message, "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
-        private void right1_MouseLeave(object sender, EventArgs e)
+        private void Button_MouseHover(object sender, EventArgs e)
         {
-            right1.BackColor = Color.Transparent; // Исходный прозрачный фон
+            (sender as Control).BackColor = HOVER_COLOR;
         }
 
-        private void left1_MouseHover(object sender, EventArgs e)
+        private void Button_MouseLeave(object sender, EventArgs e)
         {
-            left1.BackColor = Color.FromArgb(60, 187, 89); // Светлее при наведении
+            (sender as Control).BackColor = DEFAULT_BUTTON_COLOR;
         }
 
-        private void left1_MouseLeave(object sender, EventArgs e)
-        {
-            left1.BackColor = Color.Transparent; // Исходный прозрачный фон
-        }
+        // Обработчики событий для кнопок
+        private void right1_MouseHover(object sender, EventArgs e) => Button_MouseHover(sender, e);
+        private void right1_MouseLeave(object sender, EventArgs e) => Button_MouseLeave(sender, e);
+        private void left1_MouseHover(object sender, EventArgs e) => Button_MouseHover(sender, e);
+        private void left1_MouseLeave(object sender, EventArgs e) => Button_MouseLeave(sender, e);
     }
 }
